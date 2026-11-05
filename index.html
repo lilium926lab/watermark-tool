@@ -61,14 +61,14 @@ header .spacer{flex:1}
 @media (max-width:960px){.layout{grid-template-columns:1fr;padding:6px 12px 24px}}
 
 /* ---------- stage ---------- */
-.stage{background:linear-gradient(180deg,var(--stage),var(--stage2));border-radius:18px;padding:18px;min-height:420px;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.stage{background:linear-gradient(180deg,var(--stage),var(--stage2));border-radius:18px;padding:18px;min-height:420px;display:flex;flex-direction:column;box-shadow:var(--shadow);position:sticky;top:14px;z-index:20}
 .stage-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;color:#efe9dd}
 .stage-bar .fname{font-size:13px;font-weight:700;word-break:break-all}
 .stage-bar .fdim{font-size:12px;color:#b6ad9c;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:999px}
 .stage-bar .spacer{flex:1}
 .stage-bar .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#efe9dd}
 .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
-canvas#preview{max-width:100%;max-height:72vh;width:auto;height:auto;border-radius:6px;box-shadow:0 14px 44px rgba(0,0,0,.45);touch-action:none;cursor:grab;background:
+canvas#preview{max-width:100%;max-height:66vh;width:auto;height:auto;border-radius:6px;box-shadow:0 14px 44px rgba(0,0,0,.45);touch-action:none;cursor:grab;background:
   repeating-conic-gradient(#3a372f 0% 25%, #2e2b25 0% 50%) 0 0/22px 22px}
 canvas#preview.dragging{cursor:grabbing}
 .dropzone{border:2px dashed rgba(255,255,255,.28);border-radius:14px;padding:52px 28px;text-align:center;color:#efe9dd;width:100%;max-width:560px;margin:auto;transition:border-color .15s, background .15s}
@@ -100,6 +100,9 @@ canvas#preview.dragging{cursor:grabbing}
 .field label,.field .lab{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px;letter-spacing:.02em}
 .field label .val,.field .lab .val{float:right;color:var(--ink);font-weight:900;font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;accent-color:var(--accent);height:26px;margin:0}
+.num-inline{float:right;display:inline-flex;align-items:center;gap:4px}
+.num-inline input[type=number]{width:80px;padding:5px 8px;text-align:right;font-weight:900;font-variant-numeric:tabular-nums;min-height:40px}
+.num-inline .unit{color:var(--ink);font-weight:900}
 input[type=text],input[type=number],select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;outline:none}
 input[type=text]:focus,select:focus,textarea:focus{border-color:var(--accent)}
 textarea{resize:vertical;min-height:40px}
@@ -191,19 +194,19 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
   .guide ol{grid-template-columns:1fr;gap:7px}
   .guide li{padding:10px 12px;align-items:center}
   .guide span{margin-top:1px}
-  .layout{padding:8px 12px 20px;gap:14px}
+  .layout{display:block;padding:8px 12px 20px}
   .export-result{padding:0 12px 4px}
-  .stage{padding:12px;min-height:0;border-radius:14px}
+  .stage{padding:12px;min-height:0;border-radius:14px;top:calc(8px + env(safe-area-inset-top,0px))}
   .stage-bar{gap:7px}
   .stage-bar .btn.small{flex:1;justify-content:center}
-  canvas#preview{max-height:52vh}
+  canvas#preview{max-height:40vh}
   .dropzone{padding:34px 18px}
   .dropzone .big{font-size:16px}
   .dropzone .row{flex-direction:column;align-items:stretch}
   .dropzone .btn{min-height:48px;justify-content:center;font-size:14px;width:100%}
   .zoom-row button{min-height:40px;padding:8px 14px}
   .stage-hint{font-size:11.5px}
-  .panel{gap:12px}
+  .panel{gap:12px;margin-top:14px}
   .card{padding:14px}
   /* finger-sized targets: 44px+ */
   .btn{min-height:46px;padding:11px 16px;font-size:14px}
@@ -366,7 +369,7 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
         </div>
 
         <hr class="divider">
-        <div class="field"><label for="iconRot">回転 <span class="val" id="iconRotVal">0°</span></label><input type="range" id="iconRot" min="-180" max="180" step="1" value="0"></div>
+        <div class="field"><span class="lab">回転 <span class="num-inline"><input type="number" id="iconRotNum" min="-180" max="180" step="1" value="0" inputmode="numeric" aria-label="アイコンの回転角度（度）"><span class="unit">°</span></span></span><input type="range" id="iconRot" min="-180" max="180" step="1" value="0" aria-label="アイコンの回転"></div>
         <div class="field"><label for="iconOpacity">透明度（不透明度） <span class="val" id="iconOpacityVal">70%</span></label><input type="range" id="iconOpacity" min="0" max="100" step="1" value="70"></div>
         <div class="field">
           <label for="iconBlend">合成モード</label>
@@ -483,7 +486,7 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
         </div>
         <hr class="divider">
         <div class="field"><label for="textSize">文字サイズ（画像の横幅に対して） <span class="val" id="textSizeVal">3.5%</span></label><input type="range" id="textSize" min="1" max="20" step="0.5" value="3.5"></div>
-        <div class="field"><label for="textRot">回転 <span class="val" id="textRotVal">0°</span></label><input type="range" id="textRot" min="-180" max="180" step="1" value="0"></div>
+        <div class="field"><span class="lab">回転 <span class="num-inline"><input type="number" id="textRotNum" min="-180" max="180" step="1" value="0" inputmode="numeric" aria-label="テキストの回転角度（度）"><span class="unit">°</span></span></span><input type="range" id="textRot" min="-180" max="180" step="1" value="0" aria-label="テキストの回転"></div>
         <div class="field"><label for="textOpacity">透明度（不透明度） <span class="val" id="textOpacityVal">80%</span></label><input type="range" id="textOpacity" min="0" max="100" step="1" value="80"></div>
         <div class="field">
           <label for="textBlend">合成モード</label>
@@ -897,10 +900,38 @@ document.querySelectorAll(".tabs button").forEach(function(b){
 });
 
 /* ============ control binding helpers ============ */
-function bindRange(id, valId, obj, key, fmt, after){
-  var el = $(id), val = $(valId);
-  function show(){ if(val) val.textContent = fmt(parseFloat(el.value)); }
+function bindRange(id, valId, obj, key, fmt, after, numId){
+  var el = $(id), val = valId ? $(valId) : null, num = numId ? $(numId) : null;
+  function show(){
+    if(val) val.textContent = fmt(parseFloat(el.value));
+    if(num && document.activeElement !== num) num.value = el.value;
+  }
   el.addEventListener("input", function(){ obj[key] = parseFloat(el.value); show(); if(after) after(); render(); });
+  if(num){
+    function clampNum(v){
+      var min = parseFloat(el.min), max = parseFloat(el.max);
+      if(!isNaN(min) && v < min) v = min;
+      if(!isNaN(max) && v > max) v = max;
+      return v;
+    }
+    num.addEventListener("input", function(){
+      var v = parseFloat(num.value);
+      if(isNaN(v)) return;
+      v = clampNum(v);
+      el.value = v; obj[key] = v;
+      if(val) val.textContent = fmt(v);
+      if(after) after();
+      render();
+    });
+    num.addEventListener("change", function(){
+      var v = parseFloat(num.value);
+      if(isNaN(v)) v = parseFloat(el.value);
+      v = clampNum(v);
+      el.value = v; obj[key] = v; num.value = v;
+      if(val) val.textContent = fmt(v);
+      render();
+    });
+  }
   show();
   return { set: function(v){ el.value = v; obj[key] = parseFloat(v); show(); } };
 }
@@ -914,12 +945,12 @@ bindRange("iconTileSize","iconTileSizeVal",icon,"tileSize",pct);
 bindRange("iconGapX","iconGapXVal",icon,"gapX",pct);
 bindRange("iconGapY","iconGapYVal",icon,"gapY",pct);
 bindRange("iconStagger","iconStaggerVal",icon,"stagger",pct);
-bindRange("iconRot","iconRotVal",icon,"rot",deg);
+bindRange("iconRot",null,icon,"rot",deg,null,"iconRotNum");
 bindRange("iconOpacity","iconOpacityVal",icon,"opacity",pct);
 var bTextX = bindRange("textX","textXVal",text,"x",pct, clearTextPreset);
 var bTextY = bindRange("textY","textYVal",text,"y",pct, clearTextPreset);
 bindRange("textSize","textSizeVal",text,"size",function(v){ return v + "%"; });
-bindRange("textRot","textRotVal",text,"rot",deg);
+bindRange("textRot",null,text,"rot",deg,null,"textRotNum");
 bindRange("textOpacity","textOpacityVal",text,"opacity",pct);
 bindRange("textGapX","textGapXVal",text,"gapX",pct);
 bindRange("textGapY","textGapYVal",text,"gapY",pct);
