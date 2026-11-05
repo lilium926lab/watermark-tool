@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>ウォーターマーク作成ツール</title>
+<!-- ホーム画面追加用アイコン／PWA設定（名前は短く「ウォーターマーク」） -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+<link rel="manifest" href="assets/manifest.webmanifest" />
+<meta name="application-name" content="ウォーターマーク" />
+<meta name="apple-mobile-web-app-title" content="ウォーターマーク" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f1ec" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161412" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@600;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f1ec; --panel:#ffffff; --panel2:#faf8f4; --ink:#1c1a17; --ink2:#5c574e; --ink3:#8a8478;
+  --line:#e3ded2; --accent:#c75b26; --accent-ink:#fff; --accent-soft:#fbeee4;
+  --stage:#26231f; --stage2:#1a1815; --ok:#2e7d4f; --danger:#b23a2e;
+  --radius:14px; --shadow:0 10px 30px rgba(28,26,23,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161412; --panel:#211e1a; --panel2:#1b1916; --ink:#f2ede4; --ink2:#b8b0a1; --ink3:#857d6f;
+    --line:#38332c; --accent:#e07a3e; --accent-soft:#3a2718; --stage:#100f0d; --stage2:#0a0908;
+    --shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Noto Sans JP",system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 20px 10px;max-width:1560px;margin:0 auto}
+header h1{font-size:20px;font-weight:900;letter-spacing:.02em;margin:0;line-height:1.25}
+header h1 .en{display:block;font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.14em}
+header .spacer{flex:1}
+.head-note{font-size:12px;color:var(--ink2);max-width:340px;line-height:1.5}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:9px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:7px;transition:transform .08s ease, background .15s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-size:14px;padding:11px 20px;border-radius:12px;box-shadow:0 6px 18px rgba(199,91,38,.35)}
+.btn.primary:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}
+.btn.small{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn.danger{color:var(--danger)}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* ---------- layout ---------- */
+.layout{max-width:1560px;margin:0 auto;padding:6px 20px 28px;display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:18px;align-items:start}
+@media (max-width:960px){.layout{grid-template-columns:1fr;padding:6px 12px 24px}}
+
+/* ---------- stage ---------- */
+.stage{background:linear-gradient(180deg,var(--stage),var(--stage2));border-radius:18px;padding:18px;min-height:420px;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.stage-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;color:#efe9dd}
+.stage-bar .fname{font-size:13px;font-weight:700;word-break:break-all}
+.stage-bar .fdim{font-size:12px;color:#b6ad9c;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:999px}
+.stage-bar .spacer{flex:1}
+.stage-bar .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#efe9dd}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+canvas#preview{max-width:100%;max-height:72vh;width:auto;height:auto;border-radius:6px;box-shadow:0 14px 44px rgba(0,0,0,.45);touch-action:none;cursor:grab;background:
+  repeating-conic-gradient(#3a372f 0% 25%, #2e2b25 0% 50%) 0 0/22px 22px}
+canvas#preview.dragging{cursor:grabbing}
+.dropzone{border:2px dashed rgba(255,255,255,.28);border-radius:14px;padding:52px 28px;text-align:center;color:#efe9dd;width:100%;max-width:560px;margin:auto;transition:border-color .15s, background .15s}
+.dropzone.over{border-color:var(--accent);background:rgba(224,122,62,.12)}
+.dropzone .big{font-size:17px;font-weight:900;margin:12px 0 6px}
+.dropzone p{font-size:13px;color:#b6ad9c;margin:0 0 18px;line-height:1.7}
+.dropzone .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.dropzone .btn{background:#efe9dd;color:#1c1a17;border-color:#efe9dd}
+.dropzone .btn.ghost{background:transparent;color:#efe9dd;border-color:rgba(255,255,255,.3)}
+.stage-hint{margin-top:14px;font-size:12px;color:#9a927f;text-align:center;line-height:1.6}
+.zoom-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:10px}
+.zoom-row button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#efe9dd;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700}
+.zoom-row span{font-size:12px;color:#b6ad9c;min-width:52px;text-align:center}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.card h2{font-size:14px;font-weight:900;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none}
+.card .sub{font-size:12px;color:var(--ink2);line-height:1.6;margin:0 0 12px}
+.tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs button{flex:1;border:none;background:transparent;padding:9px 4px;border-radius:9px;font-weight:700;font-size:13px;color:var(--ink2)}
+.tabs button.active{background:var(--panel);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.10);border:1px solid var(--line)}
+.tabpage{display:none}
+.tabpage.active{display:block}
+
+.field{margin:13px 0}
+.field:first-child{margin-top:4px}
+.field label,.field .lab{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px;letter-spacing:.02em}
+.field label .val,.field .lab .val{float:right;color:var(--ink);font-weight:900;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:26px;margin:0}
+input[type=text],input[type=number],select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;outline:none}
+input[type=text]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:40px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .field{margin:6px 0}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;padding:7px 4px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.seg button.active{background:var(--accent);color:#fff}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.switch-row:last-child{border-bottom:none}
+.switch-row .t{font-size:13px;font-weight:700}
+.switch-row .d{font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.5}
+.switch{position:relative;width:46px;height:26px;flex:none}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch .track{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:background .15s;cursor:pointer}
+.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:left .15s}
+.switch input:checked + .track{background:var(--accent)}
+.switch input:checked + .track::after{left:23px}
+.color-row{display:flex;gap:8px;align-items:center}
+.color-row input[type=color]{width:46px;height:38px;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--panel2);cursor:pointer;flex:none}
+.color-row input[type=text]{flex:1;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.swatches{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.swatches button{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.15);padding:0}
+.presets{display:grid;grid-template-columns:repeat(3,44px);gap:6px}
+.presets button{height:36px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;position:relative;padding:0}
+.presets button::after{content:"";position:absolute;width:12px;height:12px;border-radius:3px;background:var(--ink3)}
+.presets button.active{border-color:var(--accent);background:var(--accent-soft)}
+.presets button.active::after{background:var(--accent)}
+.presets button[data-p="tl"]::after{top:5px;left:5px}.presets button[data-p="tc"]::after{top:5px;left:16px}.presets button[data-p="tr"]::after{top:5px;right:5px}
+.presets button[data-p="ml"]::after{top:12px;left:5px}.presets button[data-p="mc"]::after{top:12px;left:16px}.presets button[data-p="mr"]::after{top:12px;right:5px}
+.presets button[data-p="bl"]::after{bottom:5px;left:5px}.presets button[data-p="bc"]::after{bottom:5px;left:16px}.presets button[data-p="br"]::after{bottom:5px;right:5px}
+.preset-flex{display:flex;gap:14px;align-items:flex-start}
+.preset-flex .note{font-size:12px;color:var(--ink2);line-height:1.7}
+.thumb-row{display:flex;gap:12px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}
+.thumb-row .th{width:56px;height:56px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#ddd6c8 0% 25%, #f4f0e6 0% 50%) 0 0/14px 14px;overflow:hidden}
+@media (prefers-color-scheme: dark){.thumb-row .th{background:repeating-conic-gradient(#3a362e 0% 25%, #2a2721 0% 50%) 0 0/14px 14px}}
+.thumb-row .th img{max-width:100%;max-height:100%;object-fit:contain}
+.thumb-row .meta{flex:1;min-width:0;font-size:12px;color:var(--ink2);line-height:1.5}
+.thumb-row .meta b{color:var(--ink);font-size:13px;display:block;word-break:break-all}
+.empty-note{font-size:12.5px;color:var(--ink2);background:var(--panel2);border:1px dashed var(--line);border-radius:11px;padding:12px;line-height:1.7;text-align:center}
+.divider{border:none;border-top:1px solid var(--line);margin:16px 0 4px}
+details.adv{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+details.adv summary{font-size:12.5px;font-weight:700;color:var(--ink2);cursor:pointer;padding:2px 0}
+.kbd-hint{font-size:11.5px;color:var(--ink3);line-height:1.7}
+footer{max-width:1560px;margin:0 auto;padding:0 20px 30px;font-size:12px;color:var(--ink3);line-height:1.7}
+.credit{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+.credit a{font-weight:700;text-decoration:none}
+.credit a:hover{text-decoration:underline}
+.credit .x-link{display:inline-flex;align-items:center;gap:5px;margin-left:10px}
+.credit .x-link svg{width:13px;height:13px;flex:none}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);font-size:13px;font-weight:700;padding:11px 20px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.3);transition:transform .25s ease;z-index:50;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{transform:translate(-50%,0)}
+.hidden{display:none !important}
+
+/* ---------- export result (in-page image for webview saving) ---------- */
+.export-result{max-width:1560px;margin:0 auto;padding:0 20px 6px}
+.export-result img{display:block;max-width:100%;height:auto;margin:12px auto 4px;border-radius:8px;border:1px solid var(--line);background:repeating-conic-gradient(#ddd6c8 0% 25%, #f4f0e6 0% 50%) 0 0/18px 18px}
+@media (prefers-color-scheme: dark){.export-result img{background:repeating-conic-gradient(#3a362e 0% 25%, #2a2721 0% 50%) 0 0/18px 18px}}
+
+/* ---------- first-visit guide (3 steps) ---------- */
+.guide{max-width:1560px;margin:2px auto 0;padding:0 20px}
+.guide ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.guide li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start;box-shadow:var(--shadow)}
+.guide .num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.guide b{display:block;font-size:13.5px;line-height:1.35}
+.guide span{display:block;font-size:12px;color:var(--ink2);line-height:1.55;margin-top:2px}
+
+/* ---------- mobile export bar (hidden on desktop) ---------- */
+.mobile-bar{display:none}
+body{-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{touch-action:manipulation}
+
+/* ---------- touch-friendly controls (all widths) ---------- */
+.btn{min-height:40px}
+.tabs button{min-height:42px}
+.seg button{min-height:38px}
+input[type=range]{cursor:pointer}
+input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
+input[type=range]::-moz-range-thumb{width:26px;height:26px}
+
+/* ---------- smartphone layout ---------- */
+@media (max-width:960px){
+  body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  header{padding:12px 14px 6px;gap:10px}
+  header h1{font-size:18px}
+  header .head-note{display:none}
+  header .btn.primary{display:none}
+  .guide{padding:0 12px}
+  .guide ol{grid-template-columns:1fr;gap:7px}
+  .guide li{padding:10px 12px;align-items:center}
+  .guide span{margin-top:1px}
+  .layout{padding:8px 12px 20px;gap:14px}
+  .export-result{padding:0 12px 4px}
+  .stage{padding:12px;min-height:0;border-radius:14px}
+  .stage-bar{gap:7px}
+  .stage-bar .btn.small{flex:1;justify-content:center}
+  canvas#preview{max-height:52vh}
+  .dropzone{padding:34px 18px}
+  .dropzone .big{font-size:16px}
+  .dropzone .row{flex-direction:column;align-items:stretch}
+  .dropzone .btn{min-height:48px;justify-content:center;font-size:14px;width:100%}
+  .zoom-row button{min-height:40px;padding:8px 14px}
+  .stage-hint{font-size:11.5px}
+  .panel{gap:12px}
+  .card{padding:14px}
+  /* finger-sized targets: 44px+ */
+  .btn{min-height:46px;padding:11px 16px;font-size:14px}
+  .btn.small{min-height:44px;padding:9px 12px;font-size:13px}
+  .btn.primary{min-height:50px}
+  .tabs{padding:4px}
+  .tabs button{min-height:48px;font-size:14px;padding:10px 4px}
+  .seg button{min-height:46px;font-size:13.5px;padding:10px 4px}
+  input[type=range]{height:44px}
+  input[type=range]::-webkit-slider-thumb{width:30px;height:30px}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px}
+  input[type=text],input[type=number],select,textarea{font-size:16px;padding:12px;min-height:48px}
+  .color-row input[type=color]{width:54px;height:48px}
+  .swatches{gap:8px}
+  .swatches button{width:38px;height:38px;border-radius:10px}
+  .presets{grid-template-columns:repeat(3,52px);gap:7px}
+  .presets button{height:48px}
+  .presets button[data-p="tc"]::after{left:20px}.presets button[data-p="mc"]::after{left:20px;top:18px}.presets button[data-p="bc"]::after{left:20px}
+  .presets button[data-p="ml"]::after,.presets button[data-p="mr"]::after{top:18px}
+  .switch{width:54px;height:32px}
+  .switch .track::after{width:26px;height:26px}
+  .switch input:checked + .track::after{left:25px}
+  .switch-row{padding:11px 0}
+  .thumb-row .btn.small{flex:none}
+  footer{padding:0 14px 18px}
+  .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px));width:calc(100vw - 32px)}
+  /* fixed bottom export bar */
+  .mobile-bar{display:flex;align-items:center;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--panel);border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px rgba(0,0,0,.14)}
+  .mobile-bar .hint{font-size:11px;color:var(--ink2);line-height:1.45;flex:1;min-width:0}
+  .mobile-bar .hint b{display:block;font-size:12px;color:var(--ink)}
+  .mobile-bar .btn.primary{flex:none;min-height:52px;padding:12px 22px;font-size:15px;border-radius:12px}
+}
+@media (max-width:420px){
+  .preset-flex{flex-direction:column;gap:8px}
+  .grid2{grid-template-columns:1fr 1fr;gap:8px}
+  .guide b{font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ウォーターマーク作成ツール<span class="en">WATERMARK STUDIO</span></h1>
+  <div class="spacer"></div>
+  <p class="head-note">画像はブラウザの中だけで処理されます。サーバーへは送信されません。</p>
+  <button class="btn primary" id="btnDownloadTop" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+    書き出す
+  </button>
+</header>
+
+<nav class="guide" aria-label="使い方">
+  <ol>
+    <li><span class="num">1</span><div><b>画像を選ぶ</b><span>写真ライブラリやファイルから、透かしを入れたい画像を読み込みます。</span></div></li>
+    <li><span class="num">2</span><div><b>透かしを調整する</b><span>アイコンや文字をドラッグで移動。透明度・色・網掛け（タイリング）も変えられます。</span></div></li>
+    <li><span class="num">3</span><div><b>書き出して保存</b><span>下の「書き出す」ボタンでPNG／JPG保存。画像は端末の中だけで処理されます。</span></div></li>
+  </ol>
+</nav>
+
+<div class="layout">
+  <!-- ======= STAGE ======= -->
+  <section class="stage" id="stage">
+    <div class="stage-bar hidden" id="stageBar">
+      <span class="fname" id="baseName">—</span>
+      <span class="fdim" id="baseDim">—</span>
+      <div class="spacer"></div>
+      <button class="btn small" id="btnReplace">画像を差し替え</button>
+      <button class="btn small" id="btnRemoveBase">削除</button>
+    </div>
+
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="dropzone" id="dropzone">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:.75"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5a1.5 1.5 0 0 0-2 0L6 19"/></svg>
+        <div class="big">ベース画像を選んでください</div>
+        <p>JPG / PNG / WebP 対応。スマホは「画像を選ぶ」から写真ライブラリへ、PCはドラッグ＆ドロップ／貼り付け（Ctrl+V / ⌘V）でも読み込めます。<br>元の解像度のまま書き出されるので、大きな画像でもOKです。</p>
+        <div class="row">
+          <button class="btn" id="btnPickBase">画像を選ぶ</button>
+          <button class="btn ghost" id="btnSample">サンプル画像で試す</button>
+        </div>
+      </div>
+      <canvas id="preview" class="hidden" width="800" height="600"></canvas>
+    </div>
+
+    <div class="zoom-row hidden" id="zoomRow">
+      <button id="zoomFit">画面に合わせる</button>
+      <span id="zoomLabel">100%</span>
+      <button id="zoom100">原寸プレビュー</button>
+    </div>
+    <p class="stage-hint" id="stageHint">透かしはプレビュー上で指やマウスでドラッグして動かせます（単体配置モードのとき）。ドラッグ中は画面がスクロールしません。</p>
+  </section>
+
+  <!-- ======= PANEL ======= -->
+  <aside class="panel">
+    <div class="tabs" role="tablist">
+      <button class="active" data-tab="icon">アイコン透かし</button>
+      <button data-tab="text">テキスト透かし</button>
+      <button data-tab="export">書き出し</button>
+    </div>
+
+    <!-- ===== ICON TAB ===== -->
+    <div class="tabpage active" id="tab-icon">
+      <div class="card">
+        <h2><span class="dot"></span>アイコン画像</h2>
+        <p class="sub">自作アイコンなどの画像を透かしとして重ねます。透過PNGがおすすめです。</p>
+        <div id="iconEmpty" class="empty-note">まだアイコンが読み込まれていません。<br>下のボタンから画像を選んでください。</div>
+        <div id="iconInfo" class="thumb-row hidden">
+          <div class="th"><img id="iconThumb" alt="読み込んだアイコンのプレビュー"></div>
+          <div class="meta"><b id="iconName">—</b><span id="iconDim">—</span></div>
+          <button class="btn small danger" id="btnRemoveIcon">削除</button>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btnPickIcon">アイコンを選ぶ</button>
+          <button class="btn" id="btnSampleIcon">サンプルアイコン</button>
+        </div>
+        <div class="switch-row" style="margin-top:8px">
+          <div><div class="t">アイコン透かしを表示</div><div class="d">オフにするとアイコンだけ非表示になります</div></div>
+          <label class="switch"><input type="checkbox" id="iconEnabled" checked><span class="track"></span></label>
+        </div>
+      </div>
+
+      <div class="card" id="iconControls">
+        <h2><span class="dot"></span>配置</h2>
+        <div class="field">
+          <span class="lab">配置モード</span>
+          <div class="seg" id="iconModeSeg">
+            <button class="active" data-mode="single">単体配置</button>
+            <button data-mode="tile">全面タイリング（網掛け）</button>
+          </div>
+        </div>
+
+        <!-- single -->
+        <div id="iconSingle">
+          <div class="field">
+            <span class="lab">プリセット位置（9マス）</span>
+            <div class="preset-flex">
+              <div class="presets" id="iconPresets">
+                <button data-p="tl" aria-label="左上"></button><button data-p="tc" aria-label="上中央"></button><button data-p="tr" aria-label="右上"></button>
+                <button data-p="ml" aria-label="左中央"></button><button data-p="mc" aria-label="中央"></button><button data-p="mr" aria-label="右中央"></button>
+                <button data-p="bl" aria-label="左下"></button><button data-p="bc" aria-label="下中央"></button><button class="active" data-p="br" aria-label="右下"></button>
+              </div>
+              <p class="note">プリセットで大まかに置いて、<br>スライダーやドラッグで微調整。<br>位置は中心点の％指定です。</p>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="iconX">横位置 <span class="val" id="iconXVal">84%</span></label><input type="range" id="iconX" min="0" max="100" step="0.5" value="84"></div>
+            <div class="field"><label for="iconY">縦位置 <span class="val" id="iconYVal">88%</span></label><input type="range" id="iconY" min="0" max="100" step="0.5" value="88"></div>
+          </div>
+          <div class="field"><label for="iconSize">サイズ（画像の横幅に対して） <span class="val" id="iconSizeVal">20%</span></label><input type="range" id="iconSize" min="2" max="100" step="1" value="20"></div>
+        </div>
+
+        <!-- tile -->
+        <div id="iconTile" class="hidden">
+          <div class="field"><label for="iconTileSize">1個のサイズ <span class="val" id="iconTileSizeVal">11%</span></label><input type="range" id="iconTileSize" min="2" max="60" step="1" value="11"></div>
+          <div class="grid2">
+            <div class="field"><label for="iconGapX">横の間隔 <span class="val" id="iconGapXVal">24%</span></label><input type="range" id="iconGapX" min="4" max="80" step="1" value="24"></div>
+            <div class="field"><label for="iconGapY">縦の間隔 <span class="val" id="iconGapYVal">22%</span></label><input type="range" id="iconGapY" min="4" max="80" step="1" value="22"></div>
+          </div>
+          <div class="field"><label for="iconStagger">互い違いのずらし <span class="val" id="iconStaggerVal">50%</span></label><input type="range" id="iconStagger" min="0" max="100" step="5" value="50"></div>
+          <p class="kbd-hint">奇数行を横にずらす量です。0%で格子状、50%でレンガ状の網掛けになります。回転は下の「回転」スライダーがタイリング全体にも効きます。</p>
+        </div>
+
+        <hr class="divider">
+        <div class="field"><label for="iconRot">回転 <span class="val" id="iconRotVal">0°</span></label><input type="range" id="iconRot" min="-180" max="180" step="1" value="0"></div>
+        <div class="field"><label for="iconOpacity">透明度（不透明度） <span class="val" id="iconOpacityVal">70%</span></label><input type="range" id="iconOpacity" min="0" max="100" step="1" value="70"></div>
+        <div class="field">
+          <label for="iconBlend">合成モード</label>
+          <select id="iconBlend"></select>
+        </div>
+        <div class="switch-row">
+          <div><div class="t">単色に染める（カラー化）</div><div class="d">アイコンの形だけ残して、選んだ色で塗り直します</div></div>
+          <label class="switch"><input type="checkbox" id="iconTintOn"><span class="track"></span></label>
+        </div>
+        <div class="field" id="iconTintField" style="opacity:.45;pointer-events:none">
+          <span class="lab">染める色</span>
+          <div class="color-row">
+            <input type="color" id="iconTintColor" value="#ffffff">
+            <input type="text" id="iconTintHex" value="#FFFFFF" maxlength="7" spellcheck="false">
+          </div>
+          <div class="swatches" data-for="iconTint">
+            <button style="background:#ffffff" data-c="#FFFFFF" aria-label="白"></button>
+            <button style="background:#1c1a17" data-c="#1C1A17" aria-label="黒"></button>
+            <button style="background:#c75b26" data-c="#C75B26" aria-label="オレンジ"></button>
+            <button style="background:#d9a441" data-c="#D9A441" aria-label="金"></button>
+            <button style="background:#7fb3c8" data-c="#7FB3C8" aria-label="水色"></button>
+            <button style="background:#e39bb5" data-c="#E39BB5" aria-label="ピンク"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TEXT TAB ===== -->
+    <div class="tabpage" id="tab-text">
+      <div class="card">
+        <h2><span class="dot"></span>テキスト透かし</h2>
+        <p class="sub">アカウント名や © 表記などを文字で入れます。</p>
+        <div class="field">
+          <label for="textValue">透かし文字</label>
+          <input type="text" id="textValue" value="Sample" maxlength="60">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="textFont">フォント</label>
+            <select id="textFont">
+              <option value="sans">ゴシック（標準）</option>
+              <option value="serif">明朝</option>
+              <option value="maru">丸ゴシック</option>
+              <option value="black">極太ゴシック</option>
+              <option value="mono">等幅</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="textWeight">太さ</label>
+            <select id="textWeight">
+              <option value="400">通常</option>
+              <option value="700" selected>太字</option>
+              <option value="900">極太</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lab">文字色</span>
+          <div class="color-row">
+            <input type="color" id="textColor" value="#ffffff">
+            <input type="text" id="textHex" value="#FFFFFF" maxlength="7" spellcheck="false">
+          </div>
+          <div class="swatches" data-for="text">
+            <button style="background:#ffffff" data-c="#FFFFFF" aria-label="白"></button>
+            <button style="background:#1c1a17" data-c="#1C1A17" aria-label="黒"></button>
+            <button style="background:#c75b26" data-c="#C75B26" aria-label="オレンジ"></button>
+            <button style="background:#d9a441" data-c="#D9A441" aria-label="金"></button>
+            <button style="background:#7fb3c8" data-c="#7FB3C8" aria-label="水色"></button>
+            <button style="background:#e39bb5" data-c="#E39BB5" aria-label="ピンク"></button>
+          </div>
+        </div>
+        <div class="switch-row">
+          <div><div class="t">縁取り（アウトライン）</div><div class="d">明るい写真でも暗い写真でも読めるよう、逆色のフチを付けます</div></div>
+          <label class="switch"><input type="checkbox" id="textStrokeOn"><span class="track"></span></label>
+        </div>
+        <div class="switch-row">
+          <div><div class="t">テキスト透かしを表示</div></div>
+          <label class="switch"><input type="checkbox" id="textEnabled" checked><span class="track"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>配置</h2>
+        <div class="field">
+          <span class="lab">配置モード</span>
+          <div class="seg" id="textModeSeg">
+            <button class="active" data-mode="single">単体配置</button>
+            <button data-mode="tile">全面タイリング（網掛け）</button>
+          </div>
+        </div>
+        <div id="textSingle">
+          <div class="field">
+            <span class="lab">プリセット位置（9マス）</span>
+            <div class="preset-flex">
+              <div class="presets" id="textPresets">
+                <button data-p="tl" aria-label="左上"></button><button data-p="tc" aria-label="上中央"></button><button data-p="tr" aria-label="右上"></button>
+                <button data-p="ml" aria-label="左中央"></button><button data-p="mc" aria-label="中央"></button><button data-p="mr" aria-label="右中央"></button>
+                <button data-p="bl" aria-label="左下"></button><button class="active" data-p="bc" aria-label="下中央"></button><button data-p="br" aria-label="右下"></button>
+              </div>
+              <p class="note">プリセットで大まかに置いて、<br>スライダーやドラッグで微調整。</p>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="textX">横位置 <span class="val" id="textXVal">50%</span></label><input type="range" id="textX" min="0" max="100" step="0.5" value="50"></div>
+            <div class="field"><label for="textY">縦位置 <span class="val" id="textYVal">94%</span></label><input type="range" id="textY" min="0" max="100" step="0.5" value="94"></div>
+          </div>
+        </div>
+        <div id="textTile" class="hidden">
+          <div class="grid2">
+            <div class="field"><label for="textGapX">横の間隔 <span class="val" id="textGapXVal">34%</span></label><input type="range" id="textGapX" min="8" max="90" step="1" value="34"></div>
+            <div class="field"><label for="textGapY">縦の間隔 <span class="val" id="textGapYVal">16%</span></label><input type="range" id="textGapY" min="4" max="70" step="1" value="16"></div>
+          </div>
+          <div class="field"><label for="textStagger">互い違いのずらし <span class="val" id="textStaggerVal">50%</span></label><input type="range" id="textStagger" min="0" max="100" step="5" value="50"></div>
+        </div>
+        <hr class="divider">
+        <div class="field"><label for="textSize">文字サイズ（画像の横幅に対して） <span class="val" id="textSizeVal">3.5%</span></label><input type="range" id="textSize" min="1" max="20" step="0.5" value="3.5"></div>
+        <div class="field"><label for="textRot">回転 <span class="val" id="textRotVal">0°</span></label><input type="range" id="textRot" min="-180" max="180" step="1" value="0"></div>
+        <div class="field"><label for="textOpacity">透明度（不透明度） <span class="val" id="textOpacityVal">80%</span></label><input type="range" id="textOpacity" min="0" max="100" step="1" value="80"></div>
+        <div class="field">
+          <label for="textBlend">合成モード</label>
+          <select id="textBlend"></select>
+        </div>
+        <div class="field"><label for="textSpacing">文字間隔 <span class="val" id="textSpacingVal">0.05em</span></label><input type="range" id="textSpacing" min="0" max="0.6" step="0.01" value="0.05"></div>
+      </div>
+    </div>
+
+    <!-- ===== EXPORT TAB ===== -->
+    <div class="tabpage" id="tab-export">
+      <div class="card">
+        <h2><span class="dot"></span>書き出し設定</h2>
+        <p class="sub">プレビューと同じ内容を、ベース画像の元の解像度で書き出します。</p>
+        <div class="field">
+          <span class="lab">形式</span>
+          <div class="seg" id="fmtSeg">
+            <button class="active" data-fmt="png">PNG（高画質）</button>
+            <button data-fmt="jpg">JPG（軽量）</button>
+          </div>
+        </div>
+        <div class="field" id="qualityField" style="opacity:.45;pointer-events:none">
+          <label for="jpgQuality">JPG画質 <span class="val" id="jpgQualityVal">90%</span></label>
+          <input type="range" id="jpgQuality" min="10" max="100" step="1" value="90">
+        </div>
+        <div class="field">
+          <label for="fileName">ファイル名</label>
+          <input type="text" id="fileName" value="watermarked">
+        </div>
+        <button class="btn primary" id="btnDownload" disabled style="width:100%;justify-content:center;margin-top:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+          画像をダウンロード
+        </button>
+        <p class="kbd-hint" style="margin-top:12px">PNGは透過を保ったまま、JPGは白背景で書き出します。透かしの見た目はプレビューと同一です。書き出すと完成画像がページ下部にも表示されるので、ダウンロードが始まらない環境ではそちらを長押し／右クリックで保存してください。</p>
+      </div>
+      <div class="card">
+        <h2><span class="dot"></span>レイヤーの重なり順</h2>
+        <p class="sub" style="margin-bottom:8px">下から「ベース画像 → アイコン透かし → テキスト透かし」の順に重なります。</p>
+        <button class="btn" id="btnResetAll" style="width:100%;justify-content:center">すべての設定を初期値に戻す</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<section class="export-result hidden" id="exportResult" aria-live="polite">
+  <div class="card">
+    <h2><span class="dot"></span>書き出した画像</h2>
+    <p class="sub">完成画像です。ダウンロードが始まらない場合は、この画像をそのまま保存してください。スマホは画像を長押し →「写真に追加／画像を保存」、PCは右クリック →「名前を付けて画像を保存」。</p>
+    <img id="exportImg" alt="ウォーターマークを付けた書き出し画像">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn" id="btnSaveAgain">もう一度ダウンロードを試す</button>
+      <button class="btn" id="btnCloseResult">閉じる</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  使い方：①ベース画像を読み込む → ②アイコン／テキスト透かしを調整する → ③「書き出し」タブからダウンロード。タイリング（網掛け）は盗用対策に、単体配置＋低めの透明度はさりげない署名に向いています。
+  <p class="credit">Created by <a href="https://x.com/lilium907stella?s=11" target="_blank" rel="noopener noreferrer">Lilium907stella</a><a class="x-link" href="https://x.com/lilium907stella?s=11" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X（@lilium907stella）</a></p>
+</footer>
+
+<div class="mobile-bar" id="mobileBar">
+  <div class="hint"><b>できたら保存</b>形式は「書き出し」タブで変更できます</div>
+  <button class="btn primary" id="btnDownloadMobile" disabled>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+    書き出す
+  </button>
+</div>
+
+<input type="file" id="fileBase" accept="image/jpeg,image/png,image/webp,image/*" class="hidden">
+<input type="file" id="fileIcon" accept="image/jpeg,image/png,image/webp,image/*" class="hidden">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+
+/* ============ state ============ */
+var BLENDS = [
+  ["source-over","通常"],
+  ["multiply","乗算（multiply）"],
+  ["overlay","オーバーレイ（overlay）"],
+  ["screen","スクリーン（screen）"],
+  ["soft-light","ソフトライト（soft-light）"],
+  ["hard-light","ハードライト（hard-light）"],
+  ["darken","暗く（darken）"],
+  ["lighten","明るく（lighten）"],
+  ["difference","差分（difference）"],
+  ["exclusion","除外（exclusion）"],
+  ["color-dodge","覆い焼き（color-dodge）"],
+  ["color-burn","焼き込み（color-burn）"],
+  ["hue","色相（hue）"],
+  ["saturation","彩度（saturation）"],
+  ["color","カラー（color）"],
+  ["luminosity","輝度（luminosity）"]
+];
+function fillBlend(sel, def){
+  BLENDS.forEach(function(b){
+    var o=document.createElement("option"); o.value=b[0]; o.textContent=b[1]; sel.appendChild(o);
+  });
+  sel.value = def;
+}
+fillBlend($("iconBlend"), "source-over");
+fillBlend($("textBlend"), "source-over");
+
+var S = {
+  base: null,           // {img, w, h, name}
+  icon: null,           // {img, w, h, name}
+  iconTinted: null,     // canvas cache
+  fmt: "png",
+  zoomFit: true
+};
+var icon = { enabled:true, mode:"single", x:84, y:88, size:20, rot:0, opacity:70, blend:"source-over",
+             tintOn:false, tintColor:"#ffffff", tileSize:11, gapX:24, gapY:22, stagger:50 };
+var text = { enabled:true, mode:"single", x:50, y:94, size:3.5, rot:0, opacity:80, blend:"source-over",
+             value:"Sample", color:"#ffffff", font:"sans", weight:"700", strokeOn:false, spacing:0.05,
+             gapX:34, gapY:16, stagger:50 };
+
+var canvas = $("preview"), ctx = canvas.getContext("2d");
+var toastTimer = null;
+function toast(msg){
+  var t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("show"); }, 2600);
+}
+
+/* ============ fonts ============ */
+function fontString(px){
+  var fam;
+  if(text.font==="serif") fam = '"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif';
+  else if(text.font==="maru") fam = '"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif';
+  else if(text.font==="black") fam = '"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif';
+  else if(text.font==="mono") fam = '"SF Mono",Menlo,Consolas,monospace';
+  else fam = '"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif';
+  var w = text.font==="black" ? "900" : text.weight;
+  return w + " " + px + "px " + fam;
+}
+
+/* ============ icon tint ============ */
+function buildTintedIcon(){
+  S.iconTinted = null;
+  if(!S.icon || !icon.tintOn) return;
+  var c = document.createElement("canvas");
+  c.width = S.icon.w; c.height = S.icon.h;
+  var g = c.getContext("2d");
+  g.drawImage(S.icon.img, 0, 0);
+  g.globalCompositeOperation = "source-in";
+  g.fillStyle = icon.tintColor;
+  g.fillRect(0,0,c.width,c.height);
+  S.iconTinted = c;
+}
+function iconSource(){ return S.iconTinted || (S.icon ? S.icon.img : null); }
+
+/* ============ drawing ============ */
+function drawIconSingle(g, W, H){
+  var src = iconSource(); if(!src) return;
+  var w = W * icon.size/100;
+  var h = w * S.icon.h / S.icon.w;
+  g.save();
+  g.globalAlpha = icon.opacity/100;
+  g.globalCompositeOperation = icon.blend;
+  g.translate(W*icon.x/100, H*icon.y/100);
+  g.rotate(icon.rot*Math.PI/180);
+  g.drawImage(src, -w/2, -h/2, w, h);
+  g.restore();
+}
+function drawIconTile(g, W, H){
+  var src = iconSource(); if(!src) return;
+  var w = W * icon.tileSize/100;
+  var h = w * S.icon.h / S.icon.w;
+  var stepX = W * icon.gapX/100, stepY = H * icon.gapY/100;
+  if(stepX < w*0.3) stepX = w*0.3; if(stepY < h*0.3) stepY = h*0.3;
+  g.save();
+  g.globalAlpha = icon.opacity/100;
+  g.globalCompositeOperation = icon.blend;
+  g.translate(W/2, H/2);
+  g.rotate(icon.rot*Math.PI/180);
+  var diag = Math.sqrt(W*W+H*H);
+  var row = 0;
+  for(var y=-diag/2; y<=diag/2; y+=stepY, row++){
+    var off = (row%2===1) ? stepX * icon.stagger/100 : 0;
+    for(var x=-diag/2+off-stepX; x<=diag/2; x+=stepX){
+      g.drawImage(src, x-w/2, y-h/2, w, h);
+    }
+  }
+  g.restore();
+}
+function measureText(g, px){
+  g.save(); g.font = fontString(px);
+  var s = text.value || "";
+  if("letterSpacing" in g) { try{ g.letterSpacing = (px*text.spacing)+"px"; }catch(e){} }
+  var w = g.measureText(s).width + (text.spacing>0 ? px*text.spacing*Math.max(0,s.length-1) : 0);
+  g.restore(); return w;
+}
+function drawTextAt(g, cx, cy, px){
+  var s = text.value; if(!s) return;
+  g.save();
+  g.font = fontString(px);
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if("letterSpacing" in g){ try{ g.letterSpacing = (px*text.spacing)+"px"; }catch(e){} }
+  if(text.strokeOn){
+    g.lineWidth = Math.max(1.2, px*0.14);
+    g.lineJoin = "round";
+    var inv = isLightColor(text.color) ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.9)";
+    g.strokeStyle = inv;
+    g.strokeText(s, cx, cy);
+  }
+  g.fillStyle = text.color;
+  g.fillText(s, cx, cy);
+  g.restore();
+}
+function isLightColor(hex){
+  var m = /^#?([0-9a-f]{6})$/i.exec(hex||""); if(!m) return true;
+  var n = parseInt(m[1],16);
+  var r=(n>>16)&255, gg=(n>>8)&255, b=n&255;
+  return (0.299*r+0.587*gg+0.114*b) > 150;
+}
+function drawTextSingle(g, W, H){
+  if(!text.value) return;
+  var px = Math.max(8, W * text.size/100);
+  g.save();
+  g.globalAlpha = text.opacity/100;
+  g.globalCompositeOperation = text.blend;
+  g.translate(W*text.x/100, H*text.y/100);
+  g.rotate(text.rot*Math.PI/180);
+  drawTextAt(g, 0, 0, px);
+  g.restore();
+}
+function drawTextTile(g, W, H){
+  if(!text.value) return;
+  var px = Math.max(8, W * text.size/100);
+  var stepX = W * text.gapX/100, stepY = H * text.gapY/100;
+  g.save();
+  g.globalAlpha = text.opacity/100;
+  g.globalCompositeOperation = text.blend;
+  g.translate(W/2, H/2);
+  g.rotate(text.rot*Math.PI/180);
+  var diag = Math.sqrt(W*W+H*H);
+  var row = 0;
+  for(var y=-diag/2; y<=diag/2; y+=stepY, row++){
+    var off = (row%2===1) ? stepX * text.stagger/100 : 0;
+    for(var x=-diag/2+off-stepX; x<=diag/2; x+=stepX){
+      drawTextAt(g, x, y, px);
+    }
+  }
+  g.restore();
+}
+
+function render(){
+  if(!S.base) return;
+  var W = S.base.w, H = S.base.h;
+  if(canvas.width !== W || canvas.height !== H){ canvas.width = W; canvas.height = H; }
+  ctx.save();
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(S.base.img, 0, 0, W, H);
+  ctx.restore();
+  if(S.icon && icon.enabled){
+    if(icon.mode==="tile") drawIconTile(ctx, W, H); else drawIconSingle(ctx, W, H);
+  }
+  if(text.enabled){
+    if(text.mode==="tile") drawTextTile(ctx, W, H); else drawTextSingle(ctx, W, H);
+  }
+  applyZoom();
+}
+function applyZoom(){
+  if(!S.base) return;
+  if(S.zoomFit){
+    canvas.style.width = ""; canvas.style.height = "";
+    $("zoomLabel").textContent = "フィット";
+  } else {
+    var wrap = $("canvasWrap");
+    var maxW = Math.max(280, wrap.clientWidth - 8);
+    var scale = Math.min(1, maxW / S.base.w);
+    /* "original preview": show at up to 100% but scroll-free within stage width */
+    canvas.style.width = Math.round(S.base.w * Math.max(scale, Math.min(1, 900/S.base.w))) + "px";
+    canvas.style.height = "auto";
+    $("zoomLabel").textContent = S.base.w + " × " + S.base.h + " px";
+  }
+}
+
+/* ============ file loading ============ */
+function loadImageFile(file, cb){
+  if(!file || !/^image\//.test(file.type)){ toast("画像ファイルを選んでください"); return; }
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function(){
+    cb({ img: img, w: img.naturalWidth, h: img.naturalHeight, name: file.name || "画像" });
+  };
+  img.onerror = function(){ URL.revokeObjectURL(url); toast("画像を読み込めませんでした"); };
+  img.src = url;
+}
+function setBase(data){
+  S.base = data;
+  $("dropzone").classList.add("hidden");
+  canvas.classList.remove("hidden");
+  $("stageBar").classList.remove("hidden");
+  $("zoomRow").classList.remove("hidden");
+  $("baseName").textContent = data.name;
+  $("baseDim").textContent = data.w + " × " + data.h + " px";
+  $("fileName").value = stripExt(data.name) + "_wm";
+  $("btnDownload").disabled = false;
+  $("btnDownloadTop").disabled = false;
+  var mb = $("btnDownloadMobile"); if(mb) mb.disabled = false;
+  render();
+  toast("ベース画像を読み込みました");
+}
+function stripExt(n){ return (n||"watermarked").replace(/\.[^.]+$/,"") || "watermarked"; }
+function setIcon(data){
+  S.icon = data;
+  buildTintedIcon();
+  $("iconEmpty").classList.add("hidden");
+  $("iconInfo").classList.remove("hidden");
+  $("iconThumb").src = data.img.src;
+  $("iconName").textContent = data.name;
+  $("iconDim").textContent = data.w + " × " + data.h + " px";
+  render();
+  toast("アイコンを読み込みました");
+}
+$("btnPickBase").addEventListener("click", function(){ $("fileBase").click(); });
+$("btnReplace").addEventListener("click", function(){ $("fileBase").click(); });
+$("btnPickIcon").addEventListener("click", function(){ $("fileIcon").click(); });
+$("fileBase").addEventListener("change", function(e){ if(e.target.files[0]) loadImageFile(e.target.files[0], setBase); e.target.value=""; });
+$("fileIcon").addEventListener("change", function(e){ if(e.target.files[0]) loadImageFile(e.target.files[0], setIcon); e.target.value=""; });
+$("btnRemoveBase").addEventListener("click", function(){
+  S.base = null;
+  $("exportResult").classList.add("hidden");
+  canvas.classList.add("hidden");
+  $("dropzone").classList.remove("hidden");
+  $("stageBar").classList.add("hidden");
+  $("zoomRow").classList.add("hidden");
+  $("btnDownload").disabled = true; $("btnDownloadTop").disabled = true;
+  var mb = $("btnDownloadMobile"); if(mb) mb.disabled = true;
+});
+$("btnRemoveIcon").addEventListener("click", function(){
+  S.icon = null; S.iconTinted = null;
+  $("iconInfo").classList.add("hidden");
+  $("iconEmpty").classList.remove("hidden");
+  render();
+});
+
+/* drag & drop */
+var stage = $("stage");
+["dragenter","dragover"].forEach(function(ev){ stage.addEventListener(ev, function(e){ e.preventDefault(); $("dropzone").classList.add("over"); }); });
+["dragleave","drop"].forEach(function(ev){ stage.addEventListener(ev, function(e){ e.preventDefault(); $("dropzone").classList.remove("over"); }); });
+stage.addEventListener("drop", function(e){
+  var files = e.dataTransfer && e.dataTransfer.files;
+  if(files && files.length){
+    if(!S.base) loadImageFile(files[0], setBase);
+    else if(confirmTargetIcon()) loadImageFile(files[0], setIcon);
+    else loadImageFile(files[0], setBase);
+  }
+});
+function confirmTargetIcon(){ return false; } /* dropped files always replace base once loaded; icon has its own picker */
+document.addEventListener("paste", function(e){
+  var items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(/^image\//.test(items[i].type)){ loadImageFile(items[i].getAsFile(), setBase); break; }
+  }
+});
+
+/* samples */
+$("btnSample").addEventListener("click", function(){
+  var c = document.createElement("canvas"); c.width=1200; c.height=800;
+  var g = c.getContext("2d");
+  var grad = g.createLinearGradient(0,0,0,800);
+  grad.addColorStop(0,"#f7c98b"); grad.addColorStop(.55,"#e88ca0"); grad.addColorStop(1,"#5d6fa8");
+  g.fillStyle = grad; g.fillRect(0,0,1200,800);
+  g.fillStyle = "#fff3d6"; g.beginPath(); g.arc(950,170,74,0,7); g.fill();
+  g.fillStyle = "#46538a";
+  g.beginPath(); g.moveTo(0,800); g.lineTo(300,420); g.lineTo(560,800); g.closePath(); g.fill();
+  g.fillStyle = "#37436f";
+  g.beginPath(); g.moveTo(340,800); g.lineTo(700,360); g.lineTo(1030,800); g.closePath(); g.fill();
+  g.fillStyle = "#2c3557";
+  g.beginPath(); g.moveTo(760,800); g.lineTo(1020,500); g.lineTo(1200,660); g.lineTo(1200,800); g.closePath(); g.fill();
+  g.fillStyle = "#f6ead2"; g.fillRect(0,742,1200,58);
+  g.fillStyle = "#31406e"; g.font = '700 30px "Noto Sans JP",sans-serif';
+  g.fillText("Sample Photo — 夕景", 36, 706);
+  var img = new Image();
+  img.onload = function(){ setBase({img:img, w:1200, h:800, name:"サンプル画像（夕景）.png"}); };
+  img.src = c.toDataURL("image/png");
+});
+$("btnSampleIcon").addEventListener("click", function(){
+  var c = document.createElement("canvas"); c.width=400; c.height=400;
+  var g = c.getContext("2d");
+  g.translate(200,200);
+  g.fillStyle = "#ffffff";
+  g.beginPath();
+  var R=150, r=62;
+  for(var i=0;i<10;i++){
+    var rad = (i%2===0? R : r), a = -Math.PI/2 + i*Math.PI/5;
+    var x = Math.cos(a)*rad, y = Math.sin(a)*rad;
+    if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+  }
+  g.closePath(); g.fill();
+  g.fillStyle = "#c75b26"; g.beginPath(); g.arc(0,0,44,0,7); g.fill();
+  var img = new Image();
+  img.onload = function(){ setIcon({img:img, w:400, h:400, name:"サンプルアイコン（星）.png"}); };
+  img.src = c.toDataURL("image/png");
+});
+
+/* ============ tabs ============ */
+document.querySelectorAll(".tabs button").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll(".tabs button").forEach(function(x){ x.classList.remove("active"); });
+    b.classList.add("active");
+    document.querySelectorAll(".tabpage").forEach(function(p){ p.classList.remove("active"); });
+    $("tab-"+b.getAttribute("data-tab")).classList.add("active");
+  });
+});
+
+/* ============ control binding helpers ============ */
+function bindRange(id, valId, obj, key, fmt, after){
+  var el = $(id), val = $(valId);
+  function show(){ if(val) val.textContent = fmt(parseFloat(el.value)); }
+  el.addEventListener("input", function(){ obj[key] = parseFloat(el.value); show(); if(after) after(); render(); });
+  show();
+  return { set: function(v){ el.value = v; obj[key] = parseFloat(v); show(); } };
+}
+var pct = function(v){ return v + "%"; };
+var deg = function(v){ return v + "°"; };
+
+var bIconX = bindRange("iconX","iconXVal",icon,"x",pct, clearIconPreset);
+var bIconY = bindRange("iconY","iconYVal",icon,"y",pct, clearIconPreset);
+bindRange("iconSize","iconSizeVal",icon,"size",pct);
+bindRange("iconTileSize","iconTileSizeVal",icon,"tileSize",pct);
+bindRange("iconGapX","iconGapXVal",icon,"gapX",pct);
+bindRange("iconGapY","iconGapYVal",icon,"gapY",pct);
+bindRange("iconStagger","iconStaggerVal",icon,"stagger",pct);
+bindRange("iconRot","iconRotVal",icon,"rot",deg);
+bindRange("iconOpacity","iconOpacityVal",icon,"opacity",pct);
+var bTextX = bindRange("textX","textXVal",text,"x",pct, clearTextPreset);
+var bTextY = bindRange("textY","textYVal",text,"y",pct, clearTextPreset);
+bindRange("textSize","textSizeVal",text,"size",function(v){ return v + "%"; });
+bindRange("textRot","textRotVal",text,"rot",deg);
+bindRange("textOpacity","textOpacityVal",text,"opacity",pct);
+bindRange("textGapX","textGapXVal",text,"gapX",pct);
+bindRange("textGapY","textGapYVal",text,"gapY",pct);
+bindRange("textStagger","textStaggerVal",text,"stagger",pct);
+bindRange("textSpacing","textSpacingVal",text,"spacing",function(v){ return v.toFixed(2) + "em"; });
+bindRange("jpgQuality","jpgQualityVal",{q:90},"q",pct);
+
+function clearIconPreset(){ document.querySelectorAll("#iconPresets button").forEach(function(b){ b.classList.remove("active"); }); }
+function clearTextPreset(){ document.querySelectorAll("#textPresets button").forEach(function(b){ b.classList.remove("active"); }); }
+
+var PRESETS = { tl:[14,12], tc:[50,12], tr:[86,12], ml:[14,50], mc:[50,50], mr:[86,50], bl:[14,88], bc:[50,88], br:[86,88] };
+function wirePresets(containerId, bx, by){
+  document.querySelectorAll("#"+containerId+" button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#"+containerId+" button").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active");
+      var p = PRESETS[b.getAttribute("data-p")];
+      bx.set(p[0]); by.set(p[1]); render();
+    });
+  });
+}
+wirePresets("iconPresets", bIconX, bIconY);
+wirePresets("textPresets", bTextX, bTextY);
+
+function wireSeg(id, cb){
+  document.querySelectorAll("#"+id+" button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#"+id+" button").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active"); cb(b);
+    });
+  });
+}
+wireSeg("iconModeSeg", function(b){
+  icon.mode = b.getAttribute("data-mode");
+  $("iconSingle").classList.toggle("hidden", icon.mode!=="single");
+  $("iconTile").classList.toggle("hidden", icon.mode!=="tile");
+  render();
+});
+wireSeg("textModeSeg", function(b){
+  text.mode = b.getAttribute("data-mode");
+  $("textSingle").classList.toggle("hidden", text.mode!=="single");
+  $("textTile").classList.toggle("hidden", text.mode!=="tile");
+  render();
+});
+wireSeg("fmtSeg", function(b){
+  S.fmt = b.getAttribute("data-fmt");
+  var on = S.fmt==="jpg";
+  $("qualityField").style.opacity = on ? "1" : ".45";
+  $("qualityField").style.pointerEvents = on ? "auto" : "none";
+});
+
+/* switches & selects */
+$("iconEnabled").addEventListener("change", function(){ icon.enabled = this.checked; render(); });
+$("textEnabled").addEventListener("change", function(){ text.enabled = this.checked; render(); });
+$("iconBlend").addEventListener("change", function(){ icon.blend = this.value; render(); });
+$("textBlend").addEventListener("change", function(){ text.blend = this.value; render(); });
+$("iconTintOn").addEventListener("change", function(){
+  icon.tintOn = this.checked;
+  $("iconTintField").style.opacity = this.checked ? "1" : ".45";
+  $("iconTintField").style.pointerEvents = this.checked ? "auto" : "none";
+  buildTintedIcon(); render();
+});
+$("textStrokeOn").addEventListener("change", function(){ text.strokeOn = this.checked; render(); });
+$("textValue").addEventListener("input", function(){ text.value = this.value; render(); });
+$("textFont").addEventListener("change", function(){ text.font = this.value; render(); });
+$("textWeight").addEventListener("change", function(){ text.weight = this.value; render(); });
+
+/* color sync */
+function validHex(v){
+  v = (v||"").trim();
+  if(!v.startsWith("#")) v = "#"+v;
+  return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null;
+}
+function wireColor(colorId, hexId, apply){
+  var c = $(colorId), h = $(hexId);
+  c.addEventListener("input", function(){ h.value = c.value.toUpperCase(); apply(c.value); render(); });
+  h.addEventListener("change", function(){
+    var v = validHex(h.value);
+    if(v){ c.value = v; h.value = v.toUpperCase(); apply(v); render(); }
+    else { h.value = c.value.toUpperCase(); }
+  });
+}
+wireColor("iconTintColor","iconTintHex", function(v){ icon.tintColor = v; buildTintedIcon(); });
+wireColor("textColor","textHex", function(v){ text.color = v; });
+document.querySelectorAll(".swatches").forEach(function(sw){
+  var target = sw.getAttribute("data-for");
+  sw.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var col = b.getAttribute("data-c");
+      if(target==="text"){ $("textColor").value = col; $("textHex").value = col; text.color = col.toLowerCase(); }
+      else { $("iconTintColor").value = col; $("iconTintHex").value = col; icon.tintColor = col.toLowerCase(); buildTintedIcon(); }
+      render();
+    });
+  });
+});
+
+/* zoom */
+$("zoomFit").addEventListener("click", function(){ S.zoomFit = true; applyZoom(); });
+$("zoom100").addEventListener("click", function(){ S.zoomFit = false; applyZoom(); });
+
+/* ============ drag on canvas ============ */
+var dragTarget = null;
+function canvasPos(e){
+  var r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * canvas.width, y: (e.clientY - r.top) / r.height * canvas.height };
+}
+function hitIcon(px, py){
+  if(!S.icon || !icon.enabled || icon.mode!=="single") return false;
+  var W = canvas.width, H = canvas.height;
+  var w = W*icon.size/100, h = w*S.icon.h/S.icon.w;
+  var cx = W*icon.x/100, cy = H*icon.y/100;
+  return Math.abs(px-cx) <= w/2 + 14 && Math.abs(py-cy) <= h/2 + 14;
+}
+function hitText(px, py){
+  if(!text.enabled || text.mode!=="single" || !text.value) return false;
+  var W = canvas.width, H = canvas.height;
+  var fs = Math.max(8, W*text.size/100);
+  var tw = measureText(ctx, fs);
+  var cx = W*text.x/100, cy = H*text.y/100;
+  return Math.abs(px-cx) <= tw/2 + 14 && Math.abs(py-cy) <= fs + 14;
+}
+canvas.addEventListener("pointerdown", function(e){
+  if(!S.base) return;
+  var p = canvasPos(e);
+  if(hitIcon(p.x, p.y)) dragTarget = "icon";
+  else if(hitText(p.x, p.y)) dragTarget = "text";
+  else return;
+  /* Scroll / pinch-zoom prevention while dragging comes from the static
+     `touch-action: none` on canvas#preview in CSS (browsers decide scroll
+     behavior at touch-start, so it must not be toggled from JS). */
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+  canvas.classList.add("dragging");
+  e.preventDefault();
+});
+canvas.addEventListener("pointermove", function(e){
+  if(!dragTarget) return;
+  var p = canvasPos(e);
+  var nx = Math.max(0, Math.min(100, p.x / canvas.width * 100));
+  var ny = Math.max(0, Math.min(100, p.y / canvas.height * 100));
+  if(dragTarget==="icon"){ bIconX.set(Math.round(nx*2)/2); bIconY.set(Math.round(ny*2)/2); clearIconPreset(); }
+  else { bTextX.set(Math.round(nx*2)/2); bTextY.set(Math.round(ny*2)/2); clearTextPreset(); }
+  render();
+});
+["pointerup","pointercancel"].forEach(function(ev){
+  canvas.addEventListener(ev, function(){ dragTarget = null; canvas.classList.remove("dragging"); });
+});
+/* Safety: if the finger leaves the window mid-drag, release cleanly. */
+window.addEventListener("pointerup", function(){ if(dragTarget){ dragTarget = null; canvas.classList.remove("dragging"); } });
+window.addEventListener("blur", function(){ dragTarget = null; canvas.classList.remove("dragging"); });
+
+/* ============ export ============ */
+var lastExportUrl = null;
+function showExportResult(url){
+  /* This page usually runs inside an in-app browser (webview), where a
+     programmatic <a download> click is often swallowed silently and no file
+     ever appears. So the finished image is ALWAYS shown in the page itself:
+     the user can save it with a long-press (phone) or right-click (PC). */
+  if(lastExportUrl && lastExportUrl.indexOf("blob:")===0 && lastExportUrl!==url) URL.revokeObjectURL(lastExportUrl);
+  lastExportUrl = url;
+  $("exportImg").src = url;
+  $("exportResult").classList.remove("hidden");
+  setTimeout(function(){ $("exportResult").scrollIntoView({behavior:"smooth", block:"start"}); }, 60);
+}
+function doDownload(){
+  if(!S.base){ toast("まずベース画像を読み込んでください"); return; }
+  render();
+  var name = ($("fileName").value || "watermarked").trim() || "watermarked";
+  function present(url, ext){
+    /* Best effort: also try the classic download for regular browsers. */
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name + "." + ext;
+    a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    showExportResult(url);
+    toast("書き出しました：" + name + "." + ext + "（下に表示された画像からも保存できます）");
+  }
+  function save(blob, ext){ present(URL.createObjectURL(blob), ext); }
+  if(S.fmt === "jpg"){
+    var off = document.createElement("canvas");
+    off.width = canvas.width; off.height = canvas.height;
+    var g = off.getContext("2d");
+    g.fillStyle = "#ffffff"; g.fillRect(0,0,off.width,off.height);
+    g.drawImage(canvas, 0, 0);
+    var q = parseFloat($("jpgQuality").value)/100;
+    if(off.toBlob) off.toBlob(function(b){ if(b) save(b,"jpg"); else present(off.toDataURL("image/jpeg",q),"jpg"); }, "image/jpeg", q);
+    else present(off.toDataURL("image/jpeg",q),"jpg");
+  } else {
+    if(canvas.toBlob) canvas.toBlob(function(b){ if(b) save(b,"png"); else present(canvas.toDataURL("image/png"),"png"); }, "image/png");
+    else present(canvas.toDataURL("image/png"),"png");
+  }
+}
+$("btnSaveAgain").addEventListener("click", doDownload);
+$("btnCloseResult").addEventListener("click", function(){ $("exportResult").classList.add("hidden"); });
+$("btnDownload").addEventListener("click", doDownload);
+var btnMobile = $("btnDownloadMobile");
+if(btnMobile) btnMobile.addEventListener("click", doDownload);
+$("btnDownloadTop").addEventListener("click", function(){
+  document.querySelector('.tabs button[data-tab="export"]').click();
+  doDownload();
+});
+
+/* reset */
+$("btnResetAll").addEventListener("click", function(){
+  location.reload();
+});
+
+/* re-render when webfonts arrive (text metrics change) */
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ render(); });
+window.addEventListener("resize", function(){ applyZoom(); });
+})();
+</script>
+</body>
+</html>
