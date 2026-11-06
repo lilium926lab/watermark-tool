@@ -162,6 +162,22 @@ footer{max-width:1560px;margin:0 auto;padding:0 20px 30px;font-size:12px;color:v
 .export-result img{display:block;max-width:100%;height:auto;margin:12px auto 4px;border-radius:8px;border:1px solid var(--line);background:repeating-conic-gradient(#ddd6c8 0% 25%, #f4f0e6 0% 50%) 0 0/18px 18px}
 @media (prefers-color-scheme: dark){.export-result img{background:repeating-conic-gradient(#3a362e 0% 25%, #2a2721 0% 50%) 0 0/18px 18px}}
 
+/* ---------- guide toggle ---------- */
+.guide-bar{max-width:1560px;margin:0 auto;padding:2px 20px 0}
+.guide-toggle{background:var(--accent-soft);border-color:var(--line);color:var(--ink)}
+.guide-toggle .chev{display:inline-block;font-size:11px;color:var(--accent);transition:transform .18s ease}
+.guide-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.guide[hidden]{display:none}
+
+/* ---------- lightbox (full-size preview) ---------- */
+.lightbox{position:fixed;inset:0;z-index:80;background:rgba(12,10,8,.92);display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.lightbox .lb-bar{display:flex;align-items:center;gap:10px;color:#efe9dd;margin-bottom:10px}
+.lightbox .lb-bar .t{font-size:13px;font-weight:700;flex:1;min-width:0}
+.lightbox .lb-bar .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#efe9dd}
+.lightbox .lb-scroll{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;-webkit-overflow-scrolling:touch}
+.lightbox img{max-width:100%;height:auto;border-radius:6px;background:repeating-conic-gradient(#3a372f 0% 25%, #2e2b25 0% 50%) 0 0/22px 22px}
+.lightbox .lb-hint{font-size:11.5px;color:#b6ad9c;text-align:center;margin-top:10px;line-height:1.6}
+
 /* ---------- first-visit guide (3 steps) ---------- */
 .guide{max-width:1560px;margin:2px auto 0;padding:0 20px}
 .guide ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -196,10 +212,12 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
   .guide span{margin-top:1px}
   .layout{display:block;padding:8px 12px 20px}
   .export-result{padding:0 12px 4px}
+  .guide-bar{padding:2px 12px 0}
+  .guide-toggle{width:100%;justify-content:center;min-height:46px;font-size:14px}
   .stage{padding:12px;min-height:0;border-radius:14px;top:calc(8px + env(safe-area-inset-top,0px))}
   .stage-bar{gap:7px}
   .stage-bar .btn.small{flex:1;justify-content:center}
-  canvas#preview{max-height:40vh}
+  canvas#preview{max-height:30vh;max-width:88%}
   .dropzone{padding:34px 18px}
   .dropzone .big{font-size:16px}
   .dropzone .row{flex-direction:column;align-items:stretch}
@@ -258,7 +276,15 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
   </button>
 </header>
 
-<nav class="guide" aria-label="使い方">
+<div class="guide-bar">
+  <button class="btn guide-toggle" id="guideToggle" aria-expanded="false" aria-controls="guidePanel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3A2.6 2.6 0 1 1 12 12.2c-.7.3-1 .8-1 1.6"/><circle cx="12" cy="17.2" r=".4" fill="currentColor"/></svg>
+    使い方
+    <span class="chev" id="guideChev" aria-hidden="true">▼</span>
+  </button>
+</div>
+
+<nav class="guide" id="guidePanel" aria-label="使い方" hidden>
   <ol>
     <li><span class="num">1</span><div><b>画像を選ぶ</b><span>写真ライブラリやファイルから、透かしを入れたい画像を読み込みます。</span></div></li>
     <li><span class="num">2</span><div><b>透かしを調整する</b><span>アイコンや文字をドラッグで移動。透明度・色・網掛け（タイリング）も変えられます。</span></div></li>
@@ -295,7 +321,7 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
       <span id="zoomLabel">100%</span>
       <button id="zoom100">原寸プレビュー</button>
     </div>
-    <p class="stage-hint" id="stageHint">透かしはプレビュー上で指やマウスでドラッグして動かせます（単体配置モードのとき）。ドラッグ中は画面がスクロールしません。</p>
+    <p class="stage-hint" id="stageHint">透かしはプレビュー上で指やマウスでドラッグして動かせます（単体配置モードのとき）。ドラッグ中は画面がスクロールしません。プレビューの何もない所をタップ／クリックすると、大きく表示して確認できます。</p>
   </section>
 
   <!-- ======= PANEL ======= -->
@@ -554,6 +580,15 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px}
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
     書き出す
   </button>
+</div>
+
+<div class="lightbox hidden" id="lightbox" role="dialog" aria-modal="true" aria-label="プレビューの拡大表示">
+  <div class="lb-bar">
+    <span class="t" id="lightboxTitle">プレビュー（元の大きさで確認）</span>
+    <button class="btn small" id="btnCloseLightbox">閉じる ✕</button>
+  </div>
+  <div class="lb-scroll"><img id="lightboxImg" alt="プレビューの拡大画像"></div>
+  <p class="lb-hint">表示専用です（透かしの調整は閉じてから行ってください）。画像が大きい場合はスクロールして全体を確認できます。</p>
 </div>
 
 <input type="file" id="fileBase" accept="image/jpeg,image/png,image/webp,image/*" class="hidden">
@@ -889,6 +924,29 @@ $("btnSampleIcon").addEventListener("click", function(){
   img.src = c.toDataURL("image/png");
 });
 
+/* ============ guide toggle ============ */
+var guidePanel = $("guidePanel"), guideToggle = $("guideToggle");
+guideToggle.addEventListener("click", function(){
+  var open = guidePanel.hasAttribute("hidden");
+  if(open) guidePanel.removeAttribute("hidden"); else guidePanel.setAttribute("hidden","");
+  guideToggle.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+/* ============ lightbox (tap preview to view larger) ============ */
+function openLightbox(){
+  if(!S.base) return;
+  $("lightboxImg").src = canvas.toDataURL("image/png");
+  $("lightboxTitle").textContent = "プレビュー（" + S.base.w + " × " + S.base.h + " px）";
+  $("lightbox").classList.remove("hidden");
+}
+function closeLightbox(){
+  $("lightbox").classList.add("hidden");
+  $("lightboxImg").removeAttribute("src");
+}
+$("btnCloseLightbox").addEventListener("click", closeLightbox);
+$("lightbox").addEventListener("click", function(e){ if(e.target === this) closeLightbox(); });
+document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeLightbox(); });
+
 /* ============ tabs ============ */
 document.querySelectorAll(".tabs button").forEach(function(b){
   b.addEventListener("click", function(){
@@ -1053,6 +1111,7 @@ $("zoom100").addEventListener("click", function(){ S.zoomFit = false; applyZoom(
 
 /* ============ drag on canvas ============ */
 var dragTarget = null;
+var tapGesture = null; /* {x, y, dragged} — a tap (no drag) on empty preview opens the lightbox */
 function canvasPos(e){
   var r = canvas.getBoundingClientRect();
   return { x: (e.clientX - r.left) / r.width * canvas.width, y: (e.clientY - r.top) / r.height * canvas.height };
@@ -1074,6 +1133,7 @@ function hitText(px, py){
 }
 canvas.addEventListener("pointerdown", function(e){
   if(!S.base) return;
+  tapGesture = { x: e.clientX, y: e.clientY, dragged: false };
   var p = canvasPos(e);
   if(hitIcon(p.x, p.y)) dragTarget = "icon";
   else if(hitText(p.x, p.y)) dragTarget = "text";
@@ -1086,6 +1146,7 @@ canvas.addEventListener("pointerdown", function(e){
   e.preventDefault();
 });
 canvas.addEventListener("pointermove", function(e){
+  if(tapGesture && (Math.abs(e.clientX - tapGesture.x) > 8 || Math.abs(e.clientY - tapGesture.y) > 8)) tapGesture.dragged = true;
   if(!dragTarget) return;
   var p = canvasPos(e);
   var nx = Math.max(0, Math.min(100, p.x / canvas.width * 100));
@@ -1095,7 +1156,11 @@ canvas.addEventListener("pointermove", function(e){
   render();
 });
 ["pointerup","pointercancel"].forEach(function(ev){
-  canvas.addEventListener(ev, function(){ dragTarget = null; canvas.classList.remove("dragging"); });
+  canvas.addEventListener(ev, function(e){
+    var wasTap = ev === "pointerup" && tapGesture && !tapGesture.dragged && !dragTarget && S.base;
+    dragTarget = null; canvas.classList.remove("dragging"); tapGesture = null;
+    if(wasTap) openLightbox();
+  });
 });
 /* Safety: if the finger leaves the window mid-drag, release cleanly. */
 window.addEventListener("pointerup", function(){ if(dragTarget){ dragTarget = null; canvas.classList.remove("dragging"); } });
